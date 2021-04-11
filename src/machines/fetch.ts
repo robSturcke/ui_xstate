@@ -1,62 +1,93 @@
-import { Machine, assign } from 'xstate'
+import { Machine, assign } from 'xstate';
 
 interface FetchStates {
   states: {
-    idle: {},
-    pending: {},
-    successful: {},
-    failed: {}
-  }
+    idle: {};
+    pending: {};
+    successful: {
+      states: {
+        unknown: {};
+        withData: {};
+        withoutData: {};
+      };
+    };
+    failed: {};
+  };
 }
 
-type FetchMachineEvents =
-  | { type: 'FETCH' }
-  | { type: 'RESOLVE', results: any[] }
-  | { type: 'REJECT', message: string }
+type FetchMachineEvents = { type: 'FETCH' };
 
 interface FetchContext {
-  results: any[],
-  message: string
+  results: any[];
+  message: string;
 }
 
-export const fetchMachine = Machine<FetchContext, FetchStates, FetchMachineEvents>({
-  id: 'fetch',
-  initial: 'idle',
-  context: {
-    results: [],
-    message: '',
+export const fetchMachine = Machine<
+  FetchContext,
+  FetchStates,
+  FetchMachineEvents
+>(
+  {
+    id: 'fetch',
+    initial: 'idle',
+    context: {
+      results: [],
+      message: ''
+    },
+    states: {
+      idle: {
+        on: {
+          FETCH: 'pending'
+        }
+      },
+      pending: {
+        invoke: {
+          src: 'fetchData',
+          onDone: { target: 'successful', actions: ['setResults'] },
+          onError: { target: 'failed', actions: ['setMessage'] }
+        }
+      },
+      failed: {
+        on: {
+          FETCH: 'pending'
+        }
+      },
+      successful: {
+        initial: 'unknown',
+        on: {
+          FETCH: 'pending'
+        },
+        states: {
+          unknown: {
+            on: {
+              '': [
+                {
+                  target: 'withData',
+                  cond: 'hasData'
+                },
+                { target: 'withoutData' }
+              ]
+            }
+          },
+          withData: {},
+          withoutData: {}
+        }
+      }
+    }
   },
-  states: {
-    idle: {
-      on: {
-        FETCH: 'pending'
-      }
+  {
+    actions: {
+      setResults: assign((ctx, event: any) => ({
+        results: event.data
+      })),
+      setMessage: assign((ctx, event: any) => ({
+        message: event.data
+      }))
     },
-    pending: {
-      entry: ['fetchData'],
-      on: {
-        RESOLVE: {target: 'successful', actions: ['setResults']},
-        REJECT: {target: 'failed', actions: ['setMessage']},
-      }
-    },
-    failed: {
-      on: {
-        FETCH: 'pending'
-      }
-    },
-    successful: {
-      on: {
-        FETCH: 'pending'
+    guards: {
+      hasData: (ctx, event: any) => {
+        return ctx.results && ctx.results.length > 0;
       }
     }
   }
-}, {
-  actions: {
-    setResults: assign((ctx, event: any) => ({
-      results: event.results
-    })),
-    setMessage: assign((ctx, event: any) => ({
-      message: event.message
-    }))
-  }
-})
+);
