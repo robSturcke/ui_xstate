@@ -20,9 +20,12 @@ function App() {
   });
 
   return (
-    <div className="App">
-      {matchingState.matches('answering') ? (
+    <div className='App'>
+      {matchingState.matches('quiz.answering') ? (
         <>
+          <button onClick={() => sendToMatchingMachine({ type: 'CONTINUE' })}>
+            Continue
+          </button>
           <List
             fetchData={fetchPeople}
             selectedItem={matchingState.context.topSelectedItem}
@@ -40,15 +43,32 @@ function App() {
           ></List>
         </>
       ) : null}
-
+      {matchingState.matches('quiz.verifying') ? (
+        <>
+          <p>
+            You chose{' '}
+            {matchingState.context.topSelectedItem &&
+              matchingState.context.topSelectedItem.name}{' '}
+            and{' '}
+            {matchingState.context.bottomSelectedItem &&
+              matchingState.context.bottomSelectedItem.name}
+          </p>
+          <button
+            onClick={() => sendToMatchingMachine({ type: 'CHANGE_ANSWERS' })}
+          >
+            Change Answers
+          </button>
+          <button onClick={() => sendToMatchingMachine({ type: 'SUBMIT' })}>
+            Submit
+          </button>
+        </>
+      ) : null}
       {matchingState.matches('submitted.correct') ? (
         <p>The Force is strong with this one.</p>
       ) : null}
-
       {matchingState.matches('submitted.incorrect') ? (
         <p>Do or do not. There is no try.</p>
       ) : null}
-
     </div>
   );
 }

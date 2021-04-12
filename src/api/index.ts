@@ -19,7 +19,7 @@ function randomizedError<T>(errorRate: number, callback: () => T): Promise<T> {
 }
 
 const DEFAULT_MAX_DELAY = 3000;
-const DEFAULT_ERROR_RATE = 0.5;
+const DEFAULT_ERROR_RATE = 0;
 
 export function mockFetch<T>(
   { maxDelay, errorRate } = {
